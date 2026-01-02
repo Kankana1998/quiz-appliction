@@ -77,8 +77,8 @@ def health_check():
 
 
 if __name__ == '__main__':
-    # Default to port 5000, but can be overridden with PORT environment variable
-    # If port 5000 is in use (e.g., by macOS AirPlay Receiver), use: PORT=5001 python app.py
-    port = int(os.getenv('PORT', 5000))
+    # Default to port 5001 to avoid conflict with macOS AirPlay Receiver on port 5000
+    # Can be overridden with PORT environment variable: PORT=5000 python app.py
+    port = int(os.getenv('PORT', 5001))
     app.run(debug=True, host='0.0.0.0', port=port)
 

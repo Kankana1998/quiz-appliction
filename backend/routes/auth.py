@@ -70,8 +70,8 @@ def register():
         db.session.add(user)
         db.session.commit()
         
-        # Generate token
-        access_token = create_access_token(identity=user.id, additional_claims={'role': user.role})
+        # Generate token (identity must be a string)
+        access_token = create_access_token(identity=str(user.id), additional_claims={'role': user.role})
         
         return jsonify({
             'message': 'User registered successfully',
@@ -132,8 +132,8 @@ def login():
         if not user or not user.check_password(password):
             return jsonify({'error': 'Invalid credentials'}), 401
         
-        # Generate token
-        access_token = create_access_token(identity=user.id, additional_claims={'role': user.role})
+        # Generate token (identity must be a string)
+        access_token = create_access_token(identity=str(user.id), additional_claims={'role': user.role})
         
         return jsonify({
             'message': 'Login successful',
@@ -159,7 +159,7 @@ def get_current_user():
     """Get current authenticated user"""
     try:
         user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = User.query.get(int(user_id))
         
         if not user:
             return jsonify({'error': 'User not found'}), 404

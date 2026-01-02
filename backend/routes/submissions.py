@@ -32,7 +32,8 @@ def submit_quiz(quiz_id):
         # Get user ID if authenticated (optional - only for logged-in users)
         user_id = None
         try:
-            user_id = get_jwt_identity()
+            user_id_str = get_jwt_identity()
+            user_id = int(user_id_str) if user_id_str else None
         except:
             pass  # Anonymous submission - this is allowed for students
         
@@ -120,7 +121,8 @@ def get_quiz_submissions(quiz_id):
 def get_my_submissions():
     """Get current user's submissions"""
     try:
-        user_id = get_jwt_identity()
+        user_id_str = get_jwt_identity()
+        user_id = int(user_id_str)
         
         submissions = UserResponse.query.filter_by(user_id=user_id).order_by(
             UserResponse.submitted_at.desc()

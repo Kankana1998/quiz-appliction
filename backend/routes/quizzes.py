@@ -122,9 +122,9 @@ def create_quiz():
                 if correct_answer.lower() not in ['true', 'false']:
                     return jsonify({'error': f'Question {idx + 1}: True/False questions must have "True" or "False" as correct answer'}), 400
         
-        # Get current user
+        # Get current user (JWT identity is a string, convert to int)
         user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = User.query.get(int(user_id))
         
         if not user:
             return jsonify({'error': 'User not found'}), 404
@@ -180,13 +180,58 @@ def update_quiz(quiz_id):
         if not data:
             return jsonify({'error': 'No data provided'}), 400
         
-        # Update fields
+        # Update basic fields
         if 'title' in data:
             quiz.title = data['title'].strip()
         if 'description' in data:
             quiz.description = data['description'].strip() or None
         if 'is_active' in data:
             quiz.is_active = bool(data['is_active'])
+        
+        # Update questions if provided
+        if 'questions' in data:
+            questions_data = data['questions']
+            
+            # Validate questions
+            for idx, q_data in enumerate(questions_data):
+                question_text = q_data.get('question_text', '').strip()
+                question_type = q_data.get('question_type', '').strip().lower()
+                correct_answer = q_data.get('correct_answer', '').strip()
+                points = q_data.get('points', 1)
+                options = q_data.get('options', [])
+                
+                if not question_text:
+                    return jsonify({'error': f'Question {idx + 1}: Question text is required'}), 400
+                if question_type not in ['multiple_choice', 'true_false', 'text']:
+                    return jsonify({'error': f'Question {idx + 1}: Invalid question type'}), 400
+                if not correct_answer:
+                    return jsonify({'error': f'Question {idx + 1}: Correct answer is required'}), 400
+                
+                # Validate options for MCQ
+                if question_type == 'multiple_choice':
+                    if not options or len(options) < 2:
+                        return jsonify({'error': f'Question {idx + 1}: Multiple choice questions require at least 2 options'}), 400
+                    if correct_answer not in options:
+                        return jsonify({'error': f'Question {idx + 1}: Correct answer must be one of the options'}), 400
+                elif question_type == 'true_false':
+                    if correct_answer.lower() not in ['true', 'false']:
+                        return jsonify({'error': f'Question {idx + 1}: True/False questions must have "True" or "False" as correct answer'}), 400
+            
+            # Delete existing questions
+            Question.query.filter_by(quiz_id=quiz_id).delete()
+            
+            # Create new questions
+            for idx, q_data in enumerate(questions_data):
+                question = Question(
+                    quiz_id=quiz_id,
+                    question_text=q_data.get('question_text', '').strip(),
+                    question_type=q_data.get('question_type', '').strip().lower(),
+                    options=q_data.get('options', []),
+                    correct_answer=q_data.get('correct_answer', '').strip(),
+                    points=q_data.get('points', 1),
+                    order=idx
+                )
+                db.session.add(question)
         
         db.session.commit()
         
