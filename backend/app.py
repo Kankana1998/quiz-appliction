@@ -5,7 +5,7 @@ import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from flask_migrate import Migrate
+from flask_migrate import Migrate, upgrade
 from config import Config
 from models import db
 
@@ -16,6 +16,19 @@ app.config.from_object(Config)
 # Initialize extensions
 db.init_app(app)
 migrate = Migrate(app, db)
+
+with app.app_context():
+    try:
+        upgrade()
+        print("✅ Database migrations completed successfully")
+    except Exception as e:
+        # Log error but don't crash - migrations might already be up to date or not initialized
+        error_msg = str(e)
+        if "Target database is not up to date" in error_msg or "Can't locate revision" in error_msg:
+            print(f"⚠️  Migration note: {error_msg}")
+        else:
+            print(f"⚠️  Migration warning: {error_msg}")
+        # App will still start - migrations can be run manually if needed
 
 # Configure JWT
 app.config['JWT_SECRET_KEY'] = app.config.get('JWT_SECRET_KEY')
@@ -80,10 +93,6 @@ def internal_error(error):
 def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'message': 'Quiz API is running'}), 200
-
-
-# Note: Use Flask-Migrate for database migrations in production
-# Run: flask db init, flask db migrate, flask db upgrade
 
 
 if __name__ == '__main__':
