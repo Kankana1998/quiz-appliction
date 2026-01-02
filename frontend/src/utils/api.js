@@ -1,5 +1,6 @@
 // API utility functions
-const API_BASE_URL = 'http://localhost:5001/api';
+// Use environment variable in production, fallback to localhost for development
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 // Helper function to make API requests
 async function apiRequest(endpoint, options = {}) {
