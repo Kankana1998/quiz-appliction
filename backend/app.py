@@ -21,7 +21,17 @@ migrate = Migrate(app, db)
 app.config['JWT_SECRET_KEY'] = app.config.get('JWT_SECRET_KEY')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = app.config.get('JWT_ACCESS_TOKEN_EXPIRES', 3600)
 jwt = JWTManager(app)
-cors = CORS(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
+
+# Configure CORS - handle both string and list formats
+cors_origins = app.config.get('CORS_ORIGINS', [])
+if isinstance(cors_origins, str):
+    # If it's a string, split by comma and strip whitespace
+    cors_origins = [origin.strip() for origin in cors_origins.split(',') if origin.strip()]
+elif not isinstance(cors_origins, list):
+    # Fallback to default if not string or list
+    cors_origins = ['http://localhost:5173']
+
+cors = CORS(app, origins=cors_origins, supports_credentials=True)
 
 # Register blueprints
 from routes.auth import auth_bp
